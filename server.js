@@ -128,24 +128,28 @@ stream.on('tweet', function (tweet) {
 setInterval(
     function(){
         console.log('CHANGEMENT:');
-        ids_since_beginning.map(
+        tweets_id.map(
             // get each tweet emitted since the beginning
             (tweet_id) => client.get('statuses/show/:id', { id: tweet_id }, function(error, tweet, response) {
                 if(!error) {
                     // update the data (followers and favs and rts) of rows 
-                    const toChangeIndex = rows_since_beginning.findIndex(element => element.id == tweet_id);
-                    rows_since_beginning[toChangeIndex].usr_followers = tweet.user.followers_count;
-                    rows_since_beginning[toChangeIndex].nb_fav = tweet.favorite_count;
-                    rows_since_beginning[toChangeIndex].nb_rt = tweet.retweet_count;
+                    const toChangeIndex = rows.findIndex(element => element.id == tweet_id);
+                    rows[toChangeIndex].usr_followers = tweet.user.followers_count;
+                    rows[toChangeIndex].nb_fav = tweet.favorite_count;
+                    rows[toChangeIndex].nb_rt = tweet.retweet_count;
                 }
             }));
-        console.log(rows_since_beginning);
+        console.log(rows);
     },
     10000 // all 10s
 );
 
 
-console.log("AZAAAAH");
+/////////////////////////////////////////////////////////////////////////// Server management
+
+// Based off of Shawn Van Every's Live Web
+// http://itp.nyu.edu/~sve204/liveweb_fall2013/week3.html
+
 
 // HTTP Portion
 var http = require('http');
@@ -199,7 +203,6 @@ function handleRequest(req, res) {
   );
 }
 
-
 // WebSocket Portion
 // WebSockets work with the HTTP server
 var io = require('socket.io').listen(server);
@@ -213,17 +216,12 @@ io.sockets.on('connection',
     console.log("We have a new client: " + socket.id);
   
     // When this user emits, client side: socket.emit('otherevent',some data);
-    socket.on('mouse',
+    socket.on('message',
       function(data) {
-        // Data comes in as whatever was sent, including objects
-        console.log("Received: 'mouse' " + data.x + " " + data.y);
-      
+        console.log(data);
         // Send it to all other clients
-        socket.broadcast.emit('mouse', data);
-        
-        // This is a way to send to everyone including sender
-        // io.sockets.emit('message', "this goes to everyone");
-
+        socket.emit('tweets', rows);
+        console.log("tweets sent");
       }
     );
     
