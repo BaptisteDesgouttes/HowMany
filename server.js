@@ -47,7 +47,7 @@ let keywords = [
 let word = 'uyghur';
 
 // params GET
-let paramsGet = {q: word, count: 50, result_type: 'popular', since: "2021-04-20"};
+let paramsGet = {q: word, count: 50, result_type: 'popular', since: "2021-05-28"};
 
 // params real time
 let paramsStream = { track: word }
@@ -71,10 +71,10 @@ let createRow = (tweet) => {
             keywordsInTweet.push(keyword); 
         }
     });
-
     // creation of the row of datas
     let row = {
         id: tweet.id_str,
+        creation_date: tweet.created_at,
         keywords: keywordsInTweet,
         nb_fav: tweet.favorite_count,
         nb_rt: tweet.retweet_count,
@@ -84,7 +84,8 @@ let createRow = (tweet) => {
         usr_followers: tweet.user.followers_count,
         usr_location: tweet.user.location,
         usr_verified: tweet.user.verified,
-        usr_language: tweet.user.lang
+        usr_language: tweet.user.lang,
+        has_change: true
     };
 
     return row;
@@ -108,17 +109,17 @@ client.get('search/tweets', paramsGet, function(error, tweets, response) {
 })
 
 // id_str of the tweets allows to retrieve them
-let ids_since_beginning = [];
-// datas needed for each tweet
-let rows_since_beginning = [];
+// let ids_since_beginning = [];
+// // datas needed for each tweet
+// let rows_since_beginning = [];
 //REAL TIME MONITORING USING STREAM
 let stream = client.stream('statuses/filter', paramsStream)
 stream.on('tweet', function (tweet) {
     if(!tweet.text.includes('RT @'))    // we only consider tweets and quotes, not RTs
     {
-        ids_since_beginning.push(tweet.id_str)
+      tweets_id.push(tweet.id_str)
         
-        rows_since_beginning.push(createRow(tweet));
+      rows.push(createRow(tweet));
 
         // console.log(tweet.text);
     }
@@ -132,11 +133,21 @@ setInterval(
             // get each tweet emitted since the beginning
             (tweet_id) => client.get('statuses/show/:id', { id: tweet_id }, function(error, tweet, response) {
                 if(!error) {
-                    // update the data (followers and favs and rts) of rows 
-                    const toChangeIndex = rows.findIndex(element => element.id == tweet_id);
+                  // update the data (followers and favs and rts) of rows 
+                  const toChangeIndex = rows.findIndex(element => element.id == tweet_id);
+                  if(rows[toChangeIndex].usr_followers === tweet.user.followers_count &&
+                    rows[toChangeIndex].nb_fav === tweet.favorite_count &&
+                    rows[toChangeIndex].nb_rt === tweet.retweet_count)
+                  {
+                    rows[toChangeIndex].has_change = false;
+                  }
+                  else
+                  {
                     rows[toChangeIndex].usr_followers = tweet.user.followers_count;
                     rows[toChangeIndex].nb_fav = tweet.favorite_count;
                     rows[toChangeIndex].nb_rt = tweet.retweet_count;
+                    rows[toChangeIndex].has_change = true;
+                  }
                 }
             }));
         console.log(rows);
