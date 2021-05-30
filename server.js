@@ -85,7 +85,10 @@ let createRow = (tweet) => {
         usr_location: tweet.user.location,
         usr_verified: tweet.user.verified,
         usr_language: tweet.user.lang,
-        has_change: true
+        has_change: true,
+        positionx: Math.random() * (100 + 100) - 100,
+        positiony: Math.random() * (70 - 50) + 50,
+        positionz: Math.random() * (100 + 100) - 100
     };
 
     return row;
