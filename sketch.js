@@ -8,9 +8,6 @@ function preload() {
   scene = loadModel('people.obj');
 }
 
-////////////////////////////////////////////////AU DESSUS TON ANCIEN CODE
-////////////////////////////////////////////////EN DESSOUS LE CODE SOCKET
-
 // Keep track of our socket connection
 var socket;
 
@@ -31,15 +28,8 @@ function setup() {
     // When we receive data
     function(data) {
       tweet = data;
-      // ICI data C EST LA LISTE DES TWEETS ENVOYES
-      // SI TU TE CO SUR localhost:8080 TU PEUX LES CONSOLE LOG POUR VOIR COMMENT
-      // LES UTILISER. C'EST UN TABLEAU DE TWEET ET CHAQUE TWEET EST UN OBJET 
-      // DE CETTE FORME : 
-      // {id, keywords, nb_fav, nb_rt, is_quote, usr_followers, usr_location, usr_verified, usr_language}
-      // DU COUP data[0].nb_rt CA TE DONNE LES RT DU PREMIER TWEET
-      
-      // ACTUELLEMENT LES TWEETS ENVOYES C EST DEPUIS LE 20/04 DONC JSUIS PAS SUR QUE CA MARCHE BIEN OU QUOI
-      // DEMANDE MOI SI TU VOIS AUCUN TWEET
+      console.log(tweet);
+
       for(var i = 0; i < tweet.length; i++) {
         lightTweets[i] = new lightTweet(tweet[i].usr_verified, tweet[i].nb_fav, tweet[i].positionx, tweet[i].positiony, tweet[i].positionz);
       }
@@ -47,7 +37,7 @@ function setup() {
   );
 }
   
-  function draw() {
+function draw() {
   background(0);
   
   let locX = mouseX - height / 2;
@@ -102,7 +92,7 @@ function lightTweet(verified, likes, x, y, z) {
       pop();
     }
   }
-    //TEST MAIS FAUT GARDER AU CAS OU
+  
   //pointLight(80, 80, 80, locX, locY, 10);
   //ambientLight(255,255,255);
   

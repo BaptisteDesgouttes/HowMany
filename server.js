@@ -17,6 +17,7 @@ var client = new Twit({
     strictSSL: true,
 });
 
+//Important keywords that we could find in the tweet
 let keywords = [
     'Ouïghours',
     'Uyghurs',
@@ -44,6 +45,7 @@ let keywords = [
     'faux', 'fake'
 ];
 
+// We want to get only tweets with the following word
 let word = 'uyghur';
 
 // params GET
@@ -51,9 +53,6 @@ let paramsGet = {q: word, count: 50, result_type: 'popular', since: "2021-05-28"
 
 // params real time
 let paramsStream = { track: word }
-//track : A comma-separated list of phrases, you can think of commas as logical ORs, while spaces are
-// equivalent to logical ANDs (e.g. ‘the twitter’ is the AND twitter, and ‘the,twitter’ is the OR twitter)
-// Each phrase must be between 1 and 60 bytes, inclusive.
 
 // A row of data for one tweet
 let createRow = (tweet) => {
@@ -79,13 +78,12 @@ let createRow = (tweet) => {
         nb_fav: tweet.favorite_count,
         nb_rt: tweet.retweet_count,
         is_quote: tweet.is_quote_status,
-        // nb_quote: tweet.quote_count,
-        // nb_reply: tweet.reply_count,
         usr_followers: tweet.user.followers_count,
         usr_location: tweet.user.location,
         usr_verified: tweet.user.verified,
         usr_language: tweet.user.lang,
         has_change: true,
+        // To place the light in the p5js application
         positionx: Math.random() * (100 + 100) - 100,
         positiony: Math.random() * (70 - 50) + 50,
         positionz: Math.random() * (100 + 100) - 100
@@ -94,8 +92,11 @@ let createRow = (tweet) => {
     return row;
 }
 
+//All our tweets will be stored in this array
 let rows = [];
+// id_str of the tweets allows to retrieve them to update them
 let tweets_id =[];
+
 //GET RECENT TWEETS
 client.get('search/tweets', paramsGet, function(error, tweets, response) {
     if(!error)
@@ -107,24 +108,16 @@ client.get('search/tweets', paramsGet, function(error, tweets, response) {
                 rows.push(createRow(tweet));
             }
         });
-        // console.log(rows);
     }
 })
 
-// id_str of the tweets allows to retrieve them
-// let ids_since_beginning = [];
-// // datas needed for each tweet
-// let rows_since_beginning = [];
 //REAL TIME MONITORING USING STREAM
 let stream = client.stream('statuses/filter', paramsStream)
 stream.on('tweet', function (tweet) {
     if(!tweet.text.includes('RT @'))    // we only consider tweets and quotes, not RTs
     {
       tweets_id.push(tweet.id_str)
-        
       rows.push(createRow(tweet));
-
-        // console.log(tweet.text);
     }
 })
 
@@ -136,7 +129,6 @@ setInterval(
             // get each tweet emitted since the beginning
             (tweet_id) => client.get('statuses/show/:id', { id: tweet_id }, function(error, tweet, response) {
                 if(!error) {
-                  // update the data (followers and favs and rts) of rows 
                   const toChangeIndex = rows.findIndex(element => element.id == tweet_id);
                   if(rows[toChangeIndex].usr_followers === tweet.user.followers_count &&
                     rows[toChangeIndex].nb_fav === tweet.favorite_count &&
@@ -146,6 +138,7 @@ setInterval(
                   }
                   else
                   {
+                    // update the data (followers and favs and rts) of rows only if those infos have changed
                     rows[toChangeIndex].usr_followers = tweet.user.followers_count;
                     rows[toChangeIndex].nb_fav = tweet.favorite_count;
                     rows[toChangeIndex].nb_rt = tweet.retweet_count;
@@ -229,11 +222,10 @@ io.sockets.on('connection',
   
     console.log("We have a new client: " + socket.id);
   
-    // When this user emits, client side: socket.emit('otherevent',some data);
+    // Our p5js application send a message regularly so we can emit it the data.
     socket.on('message',
       function(data) {
-        console.log(data);
-        // Send it to all other clients
+        // Send the rows to the p5js application
         socket.emit('tweets', rows);
         console.log("tweets sent");
       }
